@@ -1,0 +1,6 @@
+test_case,query,expected_keyword
+TC1,What is your refund policy?,refund
+TC2,Can I return it?,return
+TC3,Explain refund rules,refund
+TC4,Can I get refund after 3 years?,refund
+TC5,Can I get refund without purchase?,refund

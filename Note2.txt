@@ -1,0 +1,205 @@
+source venv/bin/activate
+
+Module 2 – Topic 7: Integrating G-Eval with PyTest (Automation + Scoring)
+# test_app.py
+import pytest
+import pandas as pd
+from app.main import get_ai_response
+from evaluation.evaluator import evaluate_response
+
+# Load test data
+test_data = pd.read_csv("data/test_cases.csv")
+
+# @pytest.mark.parametrize("query,expected_keyword", test_data[["query", "expected_keyword"]].values)
+# def test_ai_responses(query, expected_keyword):
+#     response = get_ai_response(query)
+    
+#     assert expected_keyword.lower() in response.lower()
+
+@pytest.mark.parametrize("query", test_data["query"].values)
+def test_ai_response_quality(query):
+    response = get_ai_response(query)
+    
+    evaluation = evaluate_response(query, response)
+    
+    print("\nEvaluation:", evaluation)
+    
+    # Extract score (simple parsing)
+    score_line = evaluation.split("\n")[0] # Assuming the first line is "Score: <number>"
+    score = int(score_line.split(":")[1].strip()) # Extract the number after "Score:"
+    
+    # Now, We are checking quality of response based on score
+    assert score >= 3 # We expect a score of 3 or higher for a good response
+
+# Run again
+# PYTHONPATH=. pytest
+
+# Expected Output:
+# 5 passed
+# OR
+# 4 passed, 1 failed (if one response is not good enough)
+
+# If ut fails, Improve System prompt in main.py
+
+# main.py
+from evaluation.evaluator import evaluate_response
+
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load the environment variables from the .env file
+load_dotenv()
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_ai_response(user_query):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a professional customer support agent. Always give accurate and policy-based answers."},
+            {"role": "user", "content": user_query}
+        ],
+        temperature=0.7 # 0.7 keep the creativity on a little higher side
+    )
+    return response.choices[0].message.content
+
+# if __name__ == "__main__":
+#     query = input("Enter your query: ")
+#     answer = get_ai_response(query)
+#     print("\nAI Response:\n", answer)
+
+query = "What is your refund policy?"
+answer = get_ai_response(query)
+
+print("AI Response:\n", answer)
+
+evaluation = evaluate_response(query, answer)
+print("\nEvaluation:\n", evaluation)
+
+PYTHONPATH=. pytest
+
+
+Limitations:
+Q: “Is this perfect?”
+A: NO.
+We still have:
+- Score variability
+- Subjective evaluation
+- Threshold issues
+
+So what do we need?
+- Calibration
+- Threshold tuning
+
+Module 2 – Topic 8: Calibration and Threshold Tuning
+AI evaluation is also probabilistic.
+
+Current Issues:
+- Score inconsistency
+- Subjective evaluation
+- Hard threshold (>=3) may not be accurate
+- Borderline cases unclear
+
+Calibration = Adjusting evaluation logic so results become stable and meaningful
+Update evaluator.py:
+# evaluator.py
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def evaluate_response(query, ai_response):
+    prompt = f"""
+        Evaluate the response strictly.
+
+        Give scores from 1 to 5 for:
+        1. Relevance
+        2. Correctness
+        3. Completeness
+
+        Return in this format:
+
+        Relevance: <score>
+        Correctness: <score>
+        Completeness: <score>
+        Final Score: <average>
+        Reason: <short explanation>
+
+        Query: {query}
+        Response: {ai_response}
+        """
+
+    result = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are a strict evaluator."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0
+    )
+
+    return result.choices[0].message.content
+
+Update Test Logic:
+# test_app.py
+import pytest
+import pandas as pd
+from app.main import get_ai_response
+from evaluation.evaluator import evaluate_response
+
+# Load test data
+test_data = pd.read_csv("data/test_cases.csv")
+
+# @pytest.mark.parametrize("query,expected_keyword", test_data[["query", "expected_keyword"]].values)
+# def test_ai_responses(query, expected_keyword):
+#     response = get_ai_response(query)
+    
+#     assert expected_keyword.lower() in response.lower()
+
+@pytest.mark.parametrize("query", test_data["query"].values)
+def test_ai_response_quality(query):
+    response = get_ai_response(query)
+    
+    evaluation = evaluate_response(query, response)
+    
+    lines = evaluation.split("\n")
+
+    # Extract final score
+    final_score_line = [line for line in lines if "Final Score" in line][0]
+    score = float(final_score_line.split(":")[1].strip())
+    assert score >= 3.5
+
+# Run again
+# PYTHONPATH=. pytest
+
+Threshold Tuning
+Q: What should be pass criteria?
+Options:
+= 3
+= 3.5
+= 4
+This depends on business requirement.
+Use Case  ==> Threshold
+Chatbot (low risk)  ==> 3
+Customer support  ==> 3.5
+Financial / legal  ==> 4+
+
+
+Stability Techniques:
+To improve reliability, we can:
+1. Use temperature=0 (already done)
+2. Use structured prompts (done)
+3. Add multiple evaluations
+
+Run evaluation 2–3 times and average score
+eg:
+scores = []
+for _ in range(3):
+    score = evaluate_once(...)
+    scores.append(score)
+final_score = sum(scores) / len(scores)

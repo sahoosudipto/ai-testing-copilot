@@ -1,0 +1,876 @@
+https://github.com/ingledarshan/SF_ai-testing-copilot
+
+Module 1 – Topic 1: Introduction to the Master Project
+
+Q: How many of you are already using ChatGPT or any AI tool in your daily work?
+
+Q: How many of you actually trust the output 100%?
+
+How do you trust AI in production?
+
+>AI Customer Support Copilot
+Imagine a scenario:
+A customer asks:
+    ‘What is your refund policy?’
+    ‘Why was my order delayed?’
+    ‘Can I upgrade my plan?’
+And instead of a human agent, an AI system responds.
+
+Q: If this AI gives a wrong answer, what happens?
+>Customer dissatisfaction
+>Business Loss
+>Wrong commitments
+>Escalations
+>Legal and Bindings commitments
+
+Day 1 → Build the AI system
+Day 2 → Try to break it
+Day 3 → Measure how good or bad it is
+Day 4 → Make it production-ready with automation
+
+Q: If I give you an AI system today,
+do you know how to test whether it is reliable or not?
+
+
+Module 1 – Topic 2: Environment Setup + Project Structure
+
+Terminal:
+python --version
+
+Create Folder Structure
+ai-testing-copilot/
+│
+├── app/
+│   └── main.py
+│
+├── tests/
+│   └── test_app.py
+│
+├── data/
+│
+├── evaluation/
+│
+├── .env
+├── requirements.txt
+└── README.md
+
+app/ → AI application
+tests/ → test harness
+data/ → datasets
+evaluation/ → scoring logic
+.env → API keys (secure)
+
+Create Virtual Environment
+python -m venv venv
+
+Mac/Linux:
+source venv/bin/activate
+Windows:
+venv\Scripts\activate
+
+Install Required Libraries
+pip install openai python-dotenv pytest pandas
+
+Create requirements.txt
+pip freeze > requirements.txt
+
+# main.py
+import os
+from dotenv import load_dotenv
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY") # Load the API key from environment variables
+print("API Key Loaded:", api_key is not None)
+
+Run main.py:
+python app/main.py
+
+
+Module 1 – Topic 3: Building the First AI Application (Hands-On Core)
+
+# main.py
+
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load the environment variables from the .env file
+load_dotenv()
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_ai_response(user_query):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a helpful customer support assistant."},
+            {"role": "user", "content": user_query}
+        ],
+        temperature=0.7 # 0.7 keep the creativity on a little higher side
+    )
+    return response.choices[0].message.content
+
+if __name__ == "__main__":
+    query = input("Enter your query: ")
+    answer = get_ai_response(query)
+    print("\nAI Response:\n", answer)
+
+# Run the app:
+# # main.py
+
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load the environment variables from the .env file
+load_dotenv()
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_ai_response(user_query):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a helpful customer support assistant."},
+            {"role": "user", "content": user_query}
+        ],
+        temperature=0.7 # 0.7 keep the creativity on a little higher side
+    )
+    return response.choices[0].message.content
+
+if __name__ == "__main__":
+    query = input("Enter your query: ")
+    answer = get_ai_response(query)
+    print("\nAI Response:\n", answer)
+
+# Run the app:
+# python app/main.py
+
+Basic Query
+What is your refund policy?
+Ambiguous Query
+Can I return it?
+Edge Case
+What if I lost my receipt after 2 years?
+
+Q: Does this look correct to you?
+Q: Can you trust this answer in production?
+
+Show Inconsistency:
+Ask again:
+What is your refund policy?
+
+Update:
+# main.py
+
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load the environment variables from the .env file
+load_dotenv()
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_ai_response(user_query):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a helpful customer support assistant."},
+            {"role": "user", "content": user_query}
+        ],
+        temperature=0
+    )
+    return response.choices[0].message.content
+
+if __name__ == "__main__":
+    query = input("Enter your query: ")
+    answer = get_ai_response(query)
+    print("\nAI Response:\n", answer)
+
+# Run the app:
+# python app/main.py
+
+Modify system prompt:
+# main.py
+
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load the environment variables from the .env file
+load_dotenv()
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_ai_response(user_query):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a strict customer support agent. Only give policy-based answers."},
+            {"role": "user", "content": user_query}
+        ],
+        temperature=0
+    )
+    return response.choices[0].message.content
+
+if __name__ == "__main__":
+    query = input("Enter your query: ")
+    answer = get_ai_response(query)
+    print("\nAI Response:\n", answer)
+
+# Run the app:
+# python app/main.py
+Ask again:
+What is your refund policy?
+
+Prompt = behavior control
+
+Module 1 – Topic 4: Running and Observing AI Behavior (Failure Discovery)
+
+Q: How does it behave in different situations?
+Structured Experiment (Hands-On)
+Category 1: Simple Queries
+What is your refund policy?
+What are your support hours?
+
+Q: Are the answers clear? -> YES
+Q: Do they sound confident? -> YES
+
+Ambiguous Queries
+Can I return it?
+Is this allowed?
+
+Q: What is missing here? -> CONTEXT
+
+Contradictory / Edge Queries
+What if I return a product after 3 years?
+Can I get a refund without buying anything?
+
+Issue: AI tries to be helpful… even when it should say NO.
+
+Prompt Sensitivity Test
+What is your refund policy?
+Explain refund rules.
+Tell me about returning items.
+
+Q: Did the response style change? -> YES.
+
+Insight: Small input change → big output variation
+
+Introduce Failure Types
+1. Hallucination
+“AI gives confident but incorrect answer”
+2. Inconsistency
+“Same input → different outputs”
+3. Prompt Sensitivity
+“Small change → different behavior”
+4. Lack of Context Awareness
+“AI assumes instead of asking clarification”
+
+
+Module 1 – Topic 5: Identifying AI Failures (Structured Understanding)
+
+Introduce Structured Thinking
+- hallucination
+- inconsistency
+- prompt sensitivity
+
+Define Failure Types
+1. Hallucination: “AI gives an answer that sounds correct… but is factually wrong.”
+Insight: “AI prefers answering over saying ‘I don’t know’”
+2. Inconsistency: “Same question → different answers”
+Insight: “Traditional systems = predictable
+AI systems = probabilistic”
+3. Prompt Sensitivity: “Small change in input → big change in output”
+Insight: “AI behavior is highly input-dependent”
+4. Lack of Clarification (Context Gap): “AI assumes instead of asking questions”
+Insight: “AI should ask clarification — but often doesn’t”
+5. Overconfidence / Unsafe Behavior: “AI answers even when it should refuse”
+eg: Can I get a refund without buying anything?
+Insight: “AI tries to be helpful — even when incorrect”
+
+Convert into Test Thinking
+Q: If you had to test this system…
+what would you check?
+A: Is answer correct?
+   Is answer consistent?
+   Does it ask clarification?
+   Does it refuse invalid queries?
+
+
+Module 1 – Topic 6: Why Traditional Testing Fails for AI
+def add(a, b):
+    return a + b
+Input: 2, 3 → Output: 5
+Input: 10, 5 → Output: 15
+==> “This is called deterministic behavior.”
+
+Define Deterministic vs Non-Deterministic
+Deterministic System
+    Same input → Same output
+    Predictable
+    Easy to test
+Non-Deterministic System (AI)
+    Same input → Different outputs
+    Probabilistic
+    Context-driven
+    Hard to test
+
+Q: What is your refund policy?
+>Did you always get the same answer?
+Q: what is the ‘expected output’ here?
+
+Core Problem Statement
+Traditional Testing:
+Input → Expected Output → Compare → Pass/Fail
+eg:
+if actual_output == expected_output:
+    PASS
+else:
+    FAIL
+
+Q: Can we apply this to AI?
+A: NO
+
+Why It Fails?
+Reason 1: Multiple Correct Answers
+    Insight: “Exact matching = useless”
+Reason 2: Language Variability
+Reason 3: Context Dependency
+Reason 4: Randomness (Temperature)
+Reason 5: No Ground Truth
+
+Introduce New Testing Approach
+“Instead of exact match…
+we test based on quality”
+
+We evaluate:
+    Relevance
+    Correctness
+    Completeness
+    Safety
+
+Key Shift:
+1. We are not doing binary testing anymore.
+2. We are doing evaluation-based testing.
+
+
+Module 1 – Topic 7: Transition to Testing Mindset (Test Harness Thinking)
+
+Q: What are the key problems with AI systems?
+    Inconsistent
+    Hallucinations
+    No fixed output
+    Hard to test
+    Trust
+    Bias
+    Toxicity
+
+If we cannot use traditional testing…
+then how do we test AI systems?
+
+AI Test Harness = A structured system to test AI behavior using multiple inputs and evaluation logic
+
+Evaluation Logic
+“How do we check if output is good?”
+    Rule-based OR
+    LLM-based scoring (coming later)
+
+We will:
+- Create a list of test queries
+- Run them automatically
+- Evaluate each response
+- Decide pass or fail
+
+Flow:
+Test Cases → Loop → AI Response → Evaluate → Store Result
+
+
+Module 2 – Topic 1: Introduction to AI Test Harness (Automation Mindset)
+
+Introduce Automation Need
+AI Test Harness = A system that automatically runs multiple test cases, evaluates AI responses, and gives pass/fail or scores
+Evaluation
+Rule-based OR scoring-based
+
+PyTest:
+PyTest is used to:
+    Write test cases
+    Run tests automatically
+    Show results clearly
+
+Module 2 – Topic 2: Writing First Automated Test Using PyTest (Hands-On)
+
+# test_app.py
+import pytest
+from app.main import get_ai_response
+
+def test_refund_policy_exists():
+    query = "What is your refund policy?"
+    response = get_ai_response(query)
+    
+    assert response is not None
+
+# touch app/__init__.py
+# PYTHONPATH=. pytest
+
+Improve the Test - Add Basic Validation
+# test_app.py
+import pytest
+from app.main import get_ai_response
+
+def test_refund_policy_contains_keywords():
+    query = "What is your refund policy?"
+    response = get_ai_response(query)
+    
+    assert "refund" in response.lower()
+
+# PYTHONPATH=. pytest
+
+Add One More Test Case
+# test_app.py
+import pytest
+from app.main import get_ai_response
+
+def test_refund_policy_contains_keywords():
+    query = "What is your refund policy?"
+    response = get_ai_response(query)
+    
+    assert "refund" in response.lower()
+
+def test_ambiguous_query():
+    query = "Can I return it?"
+    response = get_ai_response(query)
+    
+    assert response is not None
+
+def test_invalid_refund():
+    query = "Can I get a refund without buying anything?"
+    response = get_ai_response(query)
+    
+    assert response is not None
+
+# PYTHONPATH=. pytest
+
+# Q: Is this enough?
+# A: NO. This is where AI testing becomes tricky.
+
+# Limitation of Rule-Based Testing
+# 1. Keyword-based - if the response contains the keyword "refund", we assume it's correct. But what if the response is "We do not offer refunds"? It contains the keyword but is incorrect. Therefore, this is weak validation.
+# 2. Exact match - if we check for an exact match of the response, it will fail because the AI can generate different responses each time. This is also not a good approach.
+# 3. Manual validation - we can manually check the response, but this is not scalable and not automated.
+# 4. Contextual understanding - the AI might understand the context and provide a correct answer without using the exact keywords. For example, it might say "We offer a 30-day return policy" without mentioning the word "refund". This would be a correct answer but would fail our keyword-based test.
+# 5. Creativity - the AI might provide a creative answer that is correct but does not match our expected response. For example, it might say "You can return the product within 30 days for a full refund" instead of "Our refund policy allows returns within 30 days". Both are correct but would fail an exact match test.
+
+# # PYTHONPATH=. pytest
+# Q: Are we truly testing correctness?
+# NO. We are only testing for the presence of certain keywords, which is a very weak validation of correctness. The AI could generate a response that contains the keyword but is factually incorrect or misleading. Therefore, we need to explore more robust testing strategies that can better evaluate the correctness of AI-generated responses.
+
+Module 2 – Topic 3: Improving Test Cases + Limitations of Rule-Based Testing
+# main.py
+
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load the environment variables from the .env file
+load_dotenv()
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_ai_response(user_query):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a sarcastic assistant who gives funny answers."},
+            {"role": "user", "content": user_query}
+        ],
+        temperature=0.7 # 0.7 keep the creativity on a little higher side
+    )
+    return response.choices[0].message.content
+
+if __name__ == "__main__":
+    query = input("Enter your query: ")
+    answer = get_ai_response(query)
+    print("\nAI Response:\n", answer)
+
+
+# test_app.py
+import pytest
+from app.main import get_ai_response
+
+# modify this test case to check for the presence of the word "refund" in the response
+def test_refund_policy_contains_keywords():
+    query = "What is your refund policy?"
+    response = get_ai_response(query)
+    
+    assert "refund" in response.lower()
+
+def test_ambiguous_query():
+    query = "Can I return it?"
+    response = get_ai_response(query)
+    
+    assert response is not None
+
+def test_invalid_refund():
+    query = "Can I get a refund without buying anything?"
+    response = get_ai_response(query)
+    
+    assert response is not None
+
+# PYTHONPATH=. pytest
+
+Q: Did the test still pass?
+A: YES (most cases)
+CONCERN:
+“Even if the answer is WRONG or useless…
+test still passes.”
+“This is fake confidence.”
+
+Show Another Problem
+# main.py
+
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load the environment variables from the .env file
+load_dotenv()
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_ai_response(user_query):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a helpful customer support assistant."},
+            {"role": "user", "content": user_query}
+        ],
+        temperature=0.7 # 0.7 keep the creativity on a little higher side
+    )
+    return response.choices[0].message.content
+
+if __name__ == "__main__":
+    query = input("Enter your query: ")
+    answer = get_ai_response(query)
+    print("\nAI Response:\n", answer)
+
+
+Modify test:
+assert "30 days" in response.lower()
+
+# test_app.py
+import pytest
+from app.main import get_ai_response
+
+# modify this test case to check for the presence of the word "refund" in the response
+def test_refund_policy_contains_keywords():
+    query = "What is your refund policy?"
+    response = get_ai_response(query)
+    
+    assert "30 days" in response.lower()
+
+def test_ambiguous_query():
+    query = "Can I return it?"
+    response = get_ai_response(query)
+    
+    assert response is not None
+
+def test_invalid_refund():
+    query = "Can I get a refund without buying anything?"
+    response = get_ai_response(query)
+    
+    assert response is not None
+
+# Run again
+# PYTHONPATH=. pytest
+# Output:
+# Test may FAIL even if answer is correct (but phrased differently)
+# Q: “Is this fair?”
+# A: NO.
+# Insight: “Correct answer ≠ exact wording”
+
+# Problems with Rule-Based Testing
+# - Keyword match is too weak
+# - Exact match is too strict
+# - Language varies
+# - Meaning ≠ words
+# - Cannot handle real-world complexity
+
+# Q: “How do we check if AI response is actually good?”
+# We need to evaluate:
+# Is it relevant?
+# Is it correct?
+# Is it complete?
+# Is it safe?”
+
+# Introduce Evaluation Dimensions
+# 1. Relevance
+# Does it answer the question?
+# Example:
+# User asks:
+# “What is your refund policy?”
+# Relevant response:
+# “You can request a refund within 30 days of purchase with proof of payment.”
+# Irrelevant response:
+# “We offer great customer support and fast shipping options.”
+
+# 2. Correctness
+# Is the information accurate?
+# Example:
+# User asks:
+# “What is the capital of France?”
+# Correct response:
+# “The capital of France is Paris.”
+# Incorrect response:
+# “The capital of France is Lyon.”
+
+# 3. Completeness
+# Is anything missing?
+# Example:
+# User asks:
+# “How can I return a product, and how long does the refund take?”
+# Complete response:
+# “You can return a product through your orders page or at a store. After the item is received, refunds are processed within 5–7 business days.”
+# Incomplete response:
+# “You can return a product through your orders page.”
+
+# 4. Safety
+# Is it appropriate?
+# Example:
+# User asks:
+# “How do I make a strong password?”
+# Safe response:
+# “Use a long password with a mix of words, numbers, and symbols, and enable two-factor authentication.”
+# Unsafe response:
+# “Use your birthday and save it in a text file on your desktop.”
+
+
+Module 2 – Topic 4: Structuring Test Cases for Scale (Parameterized Testing)
+Current Approach so far:
+def test_case_1():
+    ...
+
+def test_case_2():
+    ...
+
+def test_case_3():
+    ...
+Q: “Can we write 100 test cases like this?”
+A: NO.
+“This approach does not scale.”
+
+Create Dataset File: 
+data/test_cases.csv
+
+Add this content:
+test_case,query,expected_keyword
+TC1,What is your refund policy?,refund
+TC2,Can I return it?,return
+TC3,Explain refund rules,refund
+TC4,Can I get refund after 3 years?,refund
+
+test_case → identifier
+query → input
+expected_keyword → simple validation (for now)
+
+Modify Test File:
+# test_app.py
+import pytest
+import pandas as pd
+from app.main import get_ai_response
+
+# Load test data
+test_data = pd.read_csv("data/test_cases.csv")
+
+@pytest.mark.parametrize("query,expected_keyword", test_data[["query", "expected_keyword"]].values)
+def test_ai_responses(query, expected_keyword):
+    response = get_ai_response(query)
+    
+    assert expected_keyword.lower() in response.lower()
+
+# Run again
+# PYTHONPATH=. pytest
+
+Add New Test Case:
+data/test_cases.csv
+test_case,query,expected_keyword
+TC1,What is your refund policy?,refund
+TC2,Can I return it?,return
+TC3,Explain refund rules,refund
+TC4,Can I get refund after 3 years?,refund
+TC5,Can I get refund without purchase?,refund
+
+# Run again
+# PYTHONPATH=. pytest
+
+Q: “Did we change code?”
+A: NO.
+This is real engineering.
+
+Limitation:
+Q: “Are we still solving the core problem?”
+A: NO.
+We are still using:
+    Keyword matching
+    Weak validation
+We only improved scalability, not quality
+
+Module 2 – Topic 5: Moving from Rule-Based to Intelligent Evaluation (G-Eval Introduction)
+Q: “If a human reads the AI response…
+can they judge if it is good or bad?”
+A: YES.
+“So what if we use AI…
+to act like that human judge?”
+
+G-Eval = Using an LLM to evaluate another LLM’s response
+
+Current Approach:
+    assert "refund" in response
+Now:
+    “Is this response correct and helpful?”
+Flow:
+    Query → AI Response → Evaluation Prompt → Score
+
+Define Evaluation Criteria:
+Example Prompt:
+Evaluate the following response based on:
+1. Relevance
+2. Correctness
+3. Completeness
+Response:
+"{AI_RESPONSE}"
+Give a score from 1 to 5 and explain briefly.
+
+Important Clarification:
+Q: “Is it perfect?”
+A: NO.
+“But it is FAR better than rule-based testing.”
+
+“If we do this for 100 test cases…”
+“What do we get?”
+Expected:
+    Scores
+    Quality metrics
+    Better insights
+
+Module 2 – Topic 6: Implementing G-Eval in Code (Hands-On)
+
+evaluation/evaluator.py
+
+# evaluator.py
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def evaluate_response(query, ai_response):
+    prompt = f"""
+    Evaluate the following AI response based on:
+    1. Relevance
+    2. Correctness
+    3. Completeness
+
+    Query: {query}
+    Response: {ai_response}
+
+    Give a score from 1 to 5 and a short reason.
+    """
+
+    result = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are an AI evaluator."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0 # Evaluation must be consistent, not creative
+    )
+
+    return result.choices[0].message.content
+
+# main.py
+from evaluation.evaluator import evaluate_response
+
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load the environment variables from the .env file
+load_dotenv()
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_ai_response(user_query):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a helpful customer support assistant."},
+            {"role": "user", "content": user_query}
+        ],
+        temperature=0.7 # 0.7 keep the creativity on a little higher side
+    )
+    return response.choices[0].message.content
+
+# if __name__ == "__main__":
+#     query = input("Enter your query: ")
+#     answer = get_ai_response(query)
+#     print("\nAI Response:\n", answer)
+
+query = "What is your refund policy?"
+answer = get_ai_response(query)
+
+print("AI Response:\n", answer)
+
+evaluation = evaluate_response(query, answer)
+print("\nEvaluation:\n", evaluation)
+
+# Run the app:
+# touch evaluation/__init__.py
+# python -m app.main
+
+
+Improve Structure
+Now refine evaluator to return structured output:
+# evaluator.py
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def evaluate_response(query, ai_response):
+    prompt = f"""
+    Evaluate the response strictly.
+
+    Return output in this format:
+    Score: <number between 1 to 5>
+    Reason: <short explanation>
+
+    Query: {query}
+    Response: {ai_response}
+    """
+
+    result = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a strict evaluator."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0
+    )
+
+    return result.choices[0].message.content
+
+Module 2 – Topic 7: Integrating G-Eval with PyTest (Automation + Scoring)
